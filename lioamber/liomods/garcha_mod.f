@@ -124,5 +124,10 @@ c      parameter rmintsol=16.0D0
       logical :: omit_bas
 !-Variables for outout format
       logical :: style, allnml
+!     TRANSPORT STUFF
+      real*8  :: driving_rate
+      logical :: transport_calc,generate_rho0
+      integer :: save_charge_freq
+!
        end module
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
