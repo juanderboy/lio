@@ -49,7 +49,15 @@ objects += density.o
 objects += extras.o
 objects += fterm_biaspot.o lowdinpop.o
 objects += elec.o
+objects += mathsubs.o
+objects += maskrmm.o
 objects += SCF_gro.o
+objects += transport.o
+objects += fterm_biaspot.o lowdinpop.o general_module.o
+ifeq ($(cublas),1)
+objects += cublasmath.o
+endif
+objects += elec.o
 # objects += init_gromacs.o init_amber.o init.o lio_init.o
 #
 #
@@ -66,6 +74,26 @@ objects += liosubs.o
 src_paths += liosubs
 include liosubs/liosubs.mk
 
+src_paths += liomods
+src_paths += maskrmm
+src_paths += mathsubs
+src_paths += general_module
+ifeq ($(cublas),1)
+src_paths += mathsubs/cublas/
+
+endif
+
+######################################################################
+# MODULE INTERNALS : This is the inclusion of all .mk files
+# that contain the internal information on how to compile the
+# different modules.
+include liomods/liomods.mk
+include maskrmm/maskrmm.mk
+include mathsubs/mathsubs.mk
+include general_module/general_module.mk
+ifeq ($(cublas),1)
+include mathsubs/cublas/cublasmath.mk
+endif
 
 
 # garcha_mod: Description pending

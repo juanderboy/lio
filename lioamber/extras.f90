@@ -215,7 +215,7 @@
         write(*,8261) Propagator
         write(*,8262) Ntdstep
         write(*,8263) Tdstep
-        write(*,8264) Nbsh
+        write(*,8264) NBCH
         write(*,8265) Field
         write(*,8266) Fx
         write(*,8267) Fy
@@ -241,8 +241,6 @@
         write(*,8002)
 	write(*,8290) VCinp
         write(*,8291) Frestartin
-        write(*,8292) Rho_restart_in
-        write(*,8293) Rho_restart_out
         write(*,8003)
 
 !Others
@@ -356,8 +354,6 @@
 !Restart
  8290 FORMAT(4x,"║  VCinp               ║  ",l,23x,"║")
  8291 FORMAT(4x,"║  Frestartin          ║  ",a25,"║")
- 8292 FORMAT(4x,"║  Rho_restart_in      ║  ",l,23x,"║")
- 8293 FORMAT(4x,"║  Rho_restart_out     ║  ",l,23x,"║")
 
 !Others
  8303 FORMAT(4x,"║  PredCoef            ║  ",l,23x,"║")

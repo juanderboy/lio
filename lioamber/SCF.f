@@ -586,6 +586,7 @@ c
 
 c End of Starting guess (No MO , AO known)-------------------------------
 c
+      write(*,*) 'probando juanderboy', timedep
       if ((timedep.eq.1).and.(tdrestart)) then
         call g2g_timer_sum_start('TD')
         call TD()
