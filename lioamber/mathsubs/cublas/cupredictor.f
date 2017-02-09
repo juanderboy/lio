@@ -10,8 +10,8 @@
 !       IMPLICIT REAL*8 (a-h,o-z)
        REAL*8,intent(inout) :: F1a(M,M),F1b(M,M),FON(M,M)
        integer*8,intent(in) :: devPtrX,devPtrXc
-!       integer :: i,j,k,kk,stat,M1,M2,MM,M5,M7,M9,MMD,M11,M13,M15,M17
-!       integer :: M19,M20,M3,M18
+!      integer :: i,j,k,kk,stat,M1,M2,MM,M5,M7,M9,MMD,M11,M13,M15,M17
+!      integer :: M19,M20,M3,M18
        integer :: i,j,k,kk,stat
        REAL*8,allocatable :: F3(:,:),FBA(:,:)
        real*8 :: E2, tdstep1
@@ -26,6 +26,7 @@
       write(*,*) 'PREDICTOR DZ'
       M2=2*M
       MM=M*(M+1)/2
+      MMd=Md*(Md+1)/2
 c first i
       M1=1
 c now Fold
@@ -161,6 +162,7 @@ c xmm es la primer matriz de (M,M) en el
       ALLOCATE(rho4(M,M),rho2t(M,M),F3(M,M),FBA(M,M))
       M2=2*M
       MM=M*(M+1)/2
+      MMd=Md*(Md+1)/2
       write(*,*) 'PREDICTOR DC'
 c first i
       M1=1

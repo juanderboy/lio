@@ -60,7 +60,8 @@
       cutECP         = .true.        ; ecp_full_range_int = .false.       ;
 
 !     TD-DFT options.
-      timedep        = 0             ; Fx                 = 0.05          ;
+!     juanderboy, toque timedep =1 deberia ser cero. acomodarlo
+      timedep        = 1             ; Fx                 = 0.05          ;
       propagator     = 1             ; Fy                 = 0.05          ;
       tdstep         = 2.D-3         ; Fz                 = 0.05          ;
       ntdstep        = 1             ; tdrestart          = .false.       ;

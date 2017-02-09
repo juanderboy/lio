@@ -1,0 +1,38 @@
+----------------------------------------
+Begin PBS Prologue Wed Aug 17 19:38:34 CEST 2016
+Job ID:           425203.argo.ictp.it
+Username:         dscherli
+Group:            condenseGroup
+Job Name:         SIZE_vs_I_20
+Resources List:   neednodes=1:ppn=16,nodes=1:ppn=16,walltime=23:00:00
+Queue:            gpu
+Account:          
+Nodes:            gpu01 Warning: Permanently added 'gpu01,172.16.1.233' (RSA) to the list of known hosts.
+
+End PBS Prologue Wed Aug 17 19:38:34 CEST 2016
+----------------------------------------
+Warning: no access to tty (Bad file descriptor).
+Thus no job control in this shell.
+"Working directory is /home/dscherli/SIZE_vs_I/ALQ_20_0.001.1"
+Running on host gpu01
+Time is Wed Aug 17 19:38:35 CEST 2016
+Directory is /home/dscherli/SIZE_vs_I/ALQ_20_0.001.1
+----------------------------------------
+Begin PBS Epilogue Thu Aug 18 02:04:44 CEST 2016
+Job ID:           425203.argo.ictp.it
+Username:         dscherli
+Group:            condenseGroup
+Job Name:         SIZE_vs_I_20
+Session:          409
+Limits:           neednodes=1:ppn=16,nodes=1:ppn=16,walltime=23:00:00
+Resources:        cput=100:01:05,mem=356096kb,vmem=75298444kb,walltime=06:26:05
+Queue:            gpu
+Account:          
+Nodes:            gpu01 
+
+Killing leftovers...
+ removing gpu01 
+Warning: Permanently added 'gpu01,172.16.1.233' (RSA) to the list of known hosts.
+
+End PBS Epilogue Thu Aug 18 02:04:44 CEST 2016
+----------------------------------------

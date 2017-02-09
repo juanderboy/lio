@@ -1,0 +1,37 @@
+&lio
+ nsol=0
+ natom=42
+ nmax=100
+ rmax=25
+ rmaxs=25
+ diis=.true.
+ ndiis=10
+ ecpmode=t
+ cutecp=t
+ tipeecp="SBKJC"
+ ecptypes=1
+ ZlistECP=6
+! writeforces=t
+! cube_res=50
+! cube_dens=f
+! cube_orb=f
+! cube_elec=f
+ told=0.000000005
+ gold=60.
+ vcinp=.true.
+ charge=0
+ timedep=1
+ propagator=2
+ ntdstep=50000
+ tdstep=0.1
+! field=.TRUE.
+! exter=.TRUE.
+! generate_rho0=.true.
+ transport_calc=.true.
+ save_charge_freq=1
+ driving_rate=0.001
+!1
+! Fx=0.00006493015
+! Fy=0.00000000000
+! Fz=0.00012036908
+&end

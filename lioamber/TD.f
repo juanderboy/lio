@@ -31,7 +31,7 @@ c       USE latom
 #ifdef CUBLAS
         use cublasmath
 #endif
-       use general_module, only : atmorb
+       use general_module
        IMPLICIT REAL*8 (a-h,o-z)
        INTEGER :: istep
        REAL*8 :: t,E2
@@ -117,9 +117,9 @@ c       USE latom
        ALLOCATE(factorial(NBCH))
 !!------------------------------------!!
 ! Mulliken
-       ipop=1
-! Group of charges
-       groupcharge=.false.
+       ipop=0
+! Group of charges, estaba en false, cambiado a true por juanderboy
+       groupcharge=.true.
 !!------------------------------------!!
 #ifdef CUBLAS
        write(*,*) 'USING CUBLAS'

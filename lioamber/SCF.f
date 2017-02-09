@@ -1681,7 +1681,6 @@ c      endif
 
 
 c       E=E*627.509391D0
-
       if(timedep.eq.1) then
         call g2g_timer_sum_start('TD')
         call TD()

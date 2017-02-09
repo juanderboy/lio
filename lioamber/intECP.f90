@@ -906,6 +906,10 @@
 	IF (Fulltimer_ECP) CALL cpu_time ( t1 )
 
 
+	t1aux=0.D0
+	t2aux=0.D0
+
+
 	ABC_SEMILOCAL=0.d0
 	integral=0.d0
 	acum=0.d0

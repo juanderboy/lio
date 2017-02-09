@@ -24,10 +24,17 @@
                      a0, epsilon, exter, Fx, Fy, Fz, tdrestart, writedens,     &
                      writeforces, basis_set, fitting_set, int_basis, cube_res, &
                      cubegen_only, cube_dens, cube_dens_file, cube_orb,        &
-                     cube_sel,cube_orb_file, cube_elec, cube_elec_file, frestart
+                     cube_sel,cube_orb_file, cube_elec, cube_elec_file,        &
+                     frestart, driving_rate,transport_calc,generate_rho0,      &
+                     save_charge_freq
 
       ! Loads default variable values.
       call lio_defaults()
+      !TRANSPORT DEFAULTS. NEED TO BE ADDED TO LIO_DEFAULTS
+      driving_rate=0.0D0
+      transport_calc=.false.
+      generate_rho0=.false.
+      save_charge_freq=1
 
       ! Reads command line arguments for LIO.
       narg=command_argument_count()
