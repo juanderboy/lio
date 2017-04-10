@@ -60,8 +60,7 @@
       cutECP         = .true.        ; ecp_full_range_int = .false.       ;
 
 !     TD-DFT options.
-!     juanderboy, toque timedep =1 deberia ser cero. acomodarlo
-      timedep        = 1             ; Fx                 = 0.05          ;
+      timedep        = 0             ; Fx                 = 0.05          ;
       propagator     = 1             ; Fy                 = 0.05          ;
       tdstep         = 2.D-3         ; Fz                 = 0.05          ;
       ntdstep        = 1             ; tdrestart          = .false.       ;
@@ -70,7 +69,7 @@
 
 !     Write options and Restart options.
       verbose        = .false.       ; writexyz           = .true.        ;
-      writedens      = .false.       ; frestart           = 'restart.out' ;
+      writedens      = .false.       ; frestart          = 'restart.out' ;
       VCINP          = .false.       ; frestartin         = 'restart.in'  ;
       restart_freq   = 1             ; writeforces        = .false.       ;
 
@@ -129,13 +128,34 @@
       ng2    = 5*ngDyn*(ngDyn+1)/2 + 3*ngdDyn*(ngdDyn+1)/2 + ngDyn +           &
                ngDyn*norbit + Ngrid
       ng3    = 4*ngDyn
+! juanderboy!
+      write(*,*) 'hola, me llamo ngDyn y valgo', ngDyn
+!fin juanderboy!
+      allocate(X(ngDyn,ng3))
+      allocate(XX(ngdDyn,ngdDyn))
+      allocate(d(natom, natom))
+      allocate(c(ngnu,nl))
+      allocate(a(ngnu,nl))
+      allocate(Nuc(ngnu))
+      allocate(ncont(ngnu))
+      allocate(cx(ngdnu,nl))
+      allocate(ax(ngdnu,nl))
+      allocate(Nucx(ngdnu))
+      allocate(ncontx(ngdnu))
+      allocate(cd(ngdnu,nl))
+      allocate(ad(ngdnu,nl))
+      allocate(Nucd(ngdnu))
+      allocate(ncontd(ngdnu))
+      allocate(indexii(ngnu))
+      allocate(indexiid(ngdnu))
+      allocate(v(ntatom,3))
+      allocate(Em(ntatom))
+      allocate(Rm(ntatom))
+      allocate(af(natom*ngd0))
+      allocate(nnat(ntatom))
+      allocate(B(natom*ngd0,3))
+      allocate(RMM(ng2) )
 
-      allocate(X(ngDyn,ng3) , XX(ngdDyn,ngdDyn), RMM(ng2)    , d(natom, natom),&
-               c(ngnu,nl)   , a(ngnu,nl)       , Nuc(ngnu)   , ncont(ngnu)    ,&
-               cx(ngdnu,nl) , ax(ngdnu,nl)     , Nucx(ngdnu) , ncontx(ngdnu)  ,&
-               cd(ngdnu,nl) , ad(ngdnu,nl)     , Nucd(ngdnu) , ncontd(ngdnu)  ,&
-               indexii(ngnu), indexiid(ngdnu)  , v(ntatom,3) , Em(ntatom)     ,&
-               Rm(ntatom)   , af(natom*ngd0)   , nnat(ntatom), B(natom*ngd0,3))
 
       ! Cnorm contains normalized coefficients of basis.
       ! Differentiate C for x^2,y^2,z^2 and  xy,xz,yx (3^0.5 factor)

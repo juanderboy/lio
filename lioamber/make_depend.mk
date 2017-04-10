@@ -165,6 +165,7 @@ ifeq ($(cublas),1)
 objects   += cublasmath.o fortran.o
 src_paths += cublasmath
 include cublasmath/cublasmath.mk
+include mathsubs/cublas/cublasmath.mk
 
 tmplist := cublasmath.o
 $(tmplist:%.o=$(obj_path)/%.o) : $(obj_path)/garcha_mod.mod

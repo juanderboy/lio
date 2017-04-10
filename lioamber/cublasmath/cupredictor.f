@@ -100,10 +100,10 @@ c xmm es la primer matriz de (M,M) en el
       call g2g_solve_groups(0,Ex,0)
       call g2g_timer_stop('int3lu + g2g_solve')
       write(*,*) 'DESPUES'
-      if (field) then
-         write(*,*) 'FIELD PREDICTOR'
-         call intfld(g,Fxx,Fyy,Fzz)
-      endif
+  !    if (field) then
+  !       write(*,*) 'FIELD PREDICTOR'
+  !       call intfld(g,Fxx,Fyy,Fzz)
+  !    endif
 !------------------------------------------------------------------------------!
 ! Escritura de fock cuadrada
 !------------------------------------------------------------------------------!
@@ -222,10 +222,10 @@ c xmm es la primer matriz de (M,M) en el
 ! Paso4: La matriz densidad 4 es usada para calcular F5------> Corrector
       call int3lu(E2)
       call g2g_solve_groups(0,Ex,0)
-      if (field) then
-         write(*,*) 'FIELD PREDICTOR'
-         call intfld(g,Fxx,Fyy,Fzz)
-      endif
+  !    if (field) then
+  !       write(*,*) 'FIELD PREDICTOR'
+  !       call intfld(g,Fxx,Fyy,Fzz)
+  !    endif
 !------------------------------------------------------------------------------!
 ! Escritura de fock cuadrada
 !------------------------------------------------------------------------------!

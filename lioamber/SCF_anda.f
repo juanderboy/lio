@@ -1,24 +1,20 @@
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-!c SCF subroutine
-!c DIRECT VERSION
-!c Calls all integrals generator subroutines : 1 el integrals,
-!c 2 el integrals, exchange fitting , so it gets S matrix, F matrix
-!c and P matrix in lower storage mode ( symmetric matrices)
-!c
-!c Dario Estrin, 1992
+c SCF subroutine
+c DIRECT VERSION
+c Calls all integrals generator subroutines : 1 el integrals,
+c 2 el integrals, exchange fitting , so it gets S matrix, F matrix
+c and P matrix in lower storage mode ( symmetric matrices)
+c
+c Dario Estrin, 1992
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
       subroutine SCF(E,dipxyz)
-      use linear_algebra
       use garcha_mod
       use mathsubs
-      use ECP_mod, only : ecpmode, term1e, VAAA, VAAB, VBAC, 
-     & FOCK_ECP_read,FOCK_ECP_write,IzECP
-      use general_module
 #ifdef CUBLAS
       use cublasmath
 #endif
-!c      use qmmm_module, only : qmmm_struct, qmmm_nml
-!c    hola
+c      use qmmm_module, only : qmmm_struct, qmmm_nml
+c
       implicit real*8 (a-h,o-z)
       integer:: l
        dimension q(natom),work(1000),IWORK(1000)
@@ -29,35 +25,18 @@
      >   bcoef, suma
       real*8, dimension (:,:), allocatable :: fock,fockm,rho,!,FP_PF,
      >   FP_PFm,EMAT,Y,Ytrans,Xtrans,rho1,EMAT2
-!c
+c
        integer ndiist
-!c       dimension d(natom,natom)
+c       dimension d(natom,natom)
        logical  hagodiis,alloqueo, ematalloc
-!c       REAL*8 , intent(in)  :: qmcoords(3,natom)
-!c       REAL*8 , intent(in)  :: clcoords(4,nsolin)
+c       REAL*8 , intent(in)  :: qmcoords(3,natom)
+c       REAL*8 , intent(in)  :: clcoords(4,nsolin)
         INTEGER :: ErrID,iii,jjj
         LOGICAL :: docholesky
         INTEGER            :: LWORK2
         REAL*8,ALLOCATABLE :: WORK2(:)
         INTEGER, ALLOCATABLE :: IWORK2(:),IPIV(:)
         logical :: just_int3n,ematalloct
-!FFR!
-       logical             :: dovv
-       real*8              :: weight
-       integer,allocatable :: atom_group(:)
-       integer,allocatable :: orb_group(:)
-       integer,allocatable :: orb_selection(:)
-
-       real*8,dimension(:,:),allocatable :: fockbias
-       real*8,dimension(:,:),allocatable :: Xmat,Xtrp,Ymat,Ytrp
-       real*8,dimension(:,:),allocatable :: sqsm
-       real*8,dimension(:,:),allocatable :: Vmat
-       real*8,dimension(:),  allocatable :: Dvec
-
-       real*8,allocatable :: eigen_vecs(:,:), eigen_vals(:)
-!--------------------------------------------------------------------!
-
-
 #ifdef CUBLAS
         integer sizeof_real
         parameter(sizeof_real=8)
@@ -67,36 +46,7 @@
         external CUBLAS_SHUTDOWN, CUBLAS_ALLOC,CUBLAS_FREE
         integer CUBLAS_ALLOC, CUBLAS_SET_MATRIX
 #endif
-
-!------------------------------------------------------
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-        double precision :: Egood, Evieja !variables para criterio de convergencia por energia
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-
-!------------------------------------------------------
-
-	call g2g_timer_start('SCF_full')
 !--------------------------------------------------------------------!
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-!%%%%%%%%%%%%%%%    Effective Core Potential Fock    %%%%%%%%%%%%%%%%!
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-        if (ecpmode) then 
-	   if (FOCK_ECP_read) then
-	      call intECP(0) ! alocatea variables comunes y las lee del archivo ECP_restart
-	   else
-              call g2g_timer_start('ECP Routines')
-              call intECP(1) !alocatea variables, calcula variables comunes, y calcula terminos de 1 centro
-	      call intECP(2) !calcula terminos de 2 centros
-	      call intECP(3) !calcula terminos de 3 centros
-              call g2g_timer_stop('ECP Routines')
-	   end if
-	   if (FOCK_ECP_write) call WRITE_ECP()
-           call WRITE_POST(1)
- 	end if
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-
 
 
 #ifdef magma
@@ -106,34 +56,33 @@
       call g2g_timer_start('SCF')
       call g2g_timer_sum_start('SCF')
       call g2g_timer_sum_start('Initialize SCF')
-!c      just_int3n = .false.
+c      just_int3n = .false.
       alloqueo = .true.
       ematalloc=.false.
       hagodiis=.false.
-!c     if(verbose)  write(6,*) 'ntatom',ntatom,nsol,natom
+c     if(verbose)  write(6,*) 'ntatom',ntatom,nsol,natom
 
-!c------------------------------------------------------------------
-!c
-!c Pointers
-!c
-!c chequeo -----------
-!c
+c------------------------------------------------------------------
+c
+c Pointers
+c
+c chequeo -----------
+c
       Ndens=1
-!c---------------------
-!c       write(*,*) 'M=',M
+c---------------------
+c       write(*,*) 'M=',M
       allocate (znano(M,M),xnano(M,M),scratch(M,M),scratch1(M,M),
      > fock(M,M))
-
       npas=npas+1
       E=0.0D0
       E1=0.0D0
       En=0.0D0
       E2=0.0D0
       Es=0.0D0
-      Eecp=0.d0
       Ens=0.0D0
 
       ngeo=ngeo+1
+
       sq2=sqrt(2.D0)
       MM=M*(M+1)/2
       MM2=M**2
@@ -195,9 +144,6 @@ c
       allocate(rmm5(MM),rmm15(mm))
 c
       good=1.00D0
-      Egood=1.00D0
-      Evieja=0.d0
-
       niter=0
       D1=1.D0
       D2=1.D0
@@ -211,31 +157,6 @@ c
       Qc=Qc-Nel
       Qc2=Qc**2
 
-
-! FFR: Variable Allocation
-!--------------------------------------------------------------------!
-       allocate(Xmat(M,M),Xtrp(M,M),Ymat(M,M),Ytrp(M,M))
-       allocate(Vmat(M,M),Dvec(M))
-       allocate(sqsm(M,M))
-       allocate(fockbias(M,M))
-
-       dovv=.false.
-       if (dovv.eqv..true.) then
-
-        if (.not.allocated(atom_group)) then
-          allocate(atom_group(natom))
-          call read_list('atomgroup',atom_group)
-        endif
-        if (.not.allocated(orb_group)) then
-          allocate(orb_group(M))
-          call atmorb(atom_group,nuc,orb_group)
-        endif
-        if (.not.allocated(orb_selection)) then
-          allocate(orb_selection(M))
-        endif
-       endif
-
-
 C----------------------------------------
 c Para hacer lineal la integral de 2 electrone con lista de vecinos. Nano
 
@@ -244,7 +165,6 @@ c Para hacer lineal la integral de 2 electrone con lista de vecinos. Nano
         do j=1,natom
           d(i,j)=(r(i,1)-r(j,1))**2+(r(i,2)-r(j,2))**2+
      >        (r(i,3)-r(j,3))**2
-
           zij=atmin(i)+atmin(j)
           ti=atmin(i)/zij
           tj=atmin(j)/zij
@@ -272,7 +192,7 @@ c Para hacer lineal la integral de 2 electrone con lista de vecinos. Nano
       ! get MM pointers in g2g
       ! call g2g_mm_init(nsol,r,pc)
 
-
+c
 c -Create integration grid for XC here
 c -Assign points to groups (spheres/cubes)
 c -Assign significant functions to groups
@@ -295,7 +215,7 @@ c            RMM(i)=(3*old1(i))-(3*old2(i))+(old3(i))
 c          enddo
 c         endif
        endif
-       
+        
 c
 c Calculate 1e part of F here (kinetic/nuc in int1, MM point charges
 c in intsol)
@@ -303,38 +223,22 @@ c
       call g2g_timer_sum_start('1-e Fock')
       call g2g_timer_sum_start('Nuclear attraction')
       call int1(En)
-
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-!%%%%%%%%%%%%%%%    Effective Core Potential Add    %%%%%%%%%%%%%%%%%!
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-      if (ecpmode ) then
-          write(*,*) "Modifying Fock Matrix with ECP terms"
-          do k=1,MM
-               term1e(k)=RMM(M11+k-1) !backup of 1e terms
-               RMM(M11+k-1)=RMM(M11+k-1)+VAAA(k)+VAAB(k)+VBAC(k) !add ECP terms to 1e- Fock Matrix
-          enddo
-      end if
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
-
       call g2g_timer_sum_stop('Nuclear attraction')
       if(nsol.gt.0.or.igpu.ge.4) then
           call g2g_timer_sum_start('QM/MM')
-       if (igpu.le.1) then
+        if (igpu.le.1) then
           call g2g_timer_start('intsol')
           call intsol(E1s,Ens,.true.)
           call g2g_timer_stop('intsol')
         else
           call aint_qmmm_init(nsol,r,pc)
+
           call g2g_timer_start('aint_qmmm_fock')
           call aint_qmmm_fock(E1s,Ens)
           call g2g_timer_stop('aint_qmmm_fock')
         endif
           call g2g_timer_sum_stop('QM/MM')
       endif
-
 c
 c test ---------------------------------------------------------
       E1=0.D0
@@ -347,14 +251,15 @@ c Diagonalization of S matrix, after this is not needed anymore
 c S = YY^T ; X = (Y^-1)^T
 c => (X^T)SX = 1
 c
-      docholesky=.true.
+      docholesky=.true.!.false.
       call g2g_timer_start('cholesky')
       call g2g_timer_sum_start('Overlap decomposition')
+
       IF (docholesky) THEN
 #ifdef magma
         ! ESTO SIGUE USANDO Smat EN RMM(M5)
         ! CAMBIARLO CUANDO SE SIGA PROBANDO MAGMA
-        PRINT*,'DOING MAGMA-CHOLESKY'
+        PRINT*,'DOING CHOLESKY'
 
         ALLOCATE(Y(M,M),Ytrans(M,M))
         DO iii=1,M;DO jjj=1,M
@@ -379,71 +284,85 @@ c
         PRINT*,'CHOLESKY MAGMA'
 
 #else
+        PRINT*,'DOING CHOLESKY'
+        ALLOCATE(Y(M,M),Ytrans(M,M),Xtrans(M,M))
 
-! FFR: Cholesky Decomposition of Overlap
-!--------------------------------------------------------------------!
-! I am keeping Y,Ytrans and Xtrans but they should be replaced
-! by the much nicer Ymat,Ytrp,Xtrp (and X by Xmat). The outputs
-! Dvec and Vmat don't have the same meaning as in the diagona-
-! lization (they are not eigenvalues or eigenvectors. No S1/2
-! matrix can be obtained.
-!
-! Magma option should be introduced INSIDE of che call
-!
-         call sdcmp_cholesky(Smat,Dvec,Vmat,Ymat,Xtrp,Ytrp,Xmat)
+        Y=Smat
+        CALL dpotrf('L',M,Y,M,info)
+        DO iii=1,M;DO jjj=1,M
+          IF (jjj.GT.iii) THEN
+            Y(iii,jjj)=0.0d0
+          ENDIF
+          Ytrans(jjj,iii)=Y(iii,jjj)
+        ENDDO;ENDDO
 
-         allocate (Y(M,M),Ytrans(M,M),Xtrans(M,M))
-         do iii=1,M
-         do jjj=1,M
-           X(iii,jjj)=Xmat(iii,jjj)
-         enddo
-         enddo
-         Y=Ymat
-         Xtrans=Xtrp
-         Ytrans=Ytrp
-         do kk=1,M
-           RMM(M13+kk-1)=0.0d0
-         enddo
-
+        Xtrans=Y
+        CALL dtrtri('L','N',M,Xtrans,M,info)
+        DO iii=1,M;DO jjj=1,M
+          IF (jjj.GT.iii) THEN
+            Xtrans(iii,jjj)=0.0d0
+          ENDIF
+          X(jjj,iii)=Xtrans(iii,jjj)
+        ENDDO;ENDDO
 #endif
       ELSE
 
-! FFR: Canonical Diagonalization of Overlap
-!--------------------------------------------------------------------!
-! I am keeping Y,Ytrans and Xtrans but they should be replaced
-! by the much nicer Ymat,Ytrp,Xtrp (and X by Xmat). Also, copy
-! into RMM.
-!
-         call sdiag_canonical(Smat,Dvec,Vmat,Xmat,Xtrp,Ymat,Ytrp)
-         sqsm=matmul(Vmat,Ytrp)
 
+c ESSL OPTION ------------------------------------------
+        do i=1,MM
+         rmm5(i)=RMM(M5+i-1)
+c        write(56,*) RMM(M15+1)
+        enddo
+#ifdef essl
+        call DSPEV(1,RMM(M5),RMM(M13),X,M,M,RMM(M15),M2)
+#endif
+c
+c LAPACK OPTION -----------------------------------------
+#ifdef pack
+c       call magmaf_dsyev('V','L',M,xxx,M,
+       do ii=1,M; do jj=1,M
+         X(ii,jj)=Smat(ii,jj)
+       enddo; enddo
+       if (allocated(WORK2)) deallocate(WORK2); allocate(WORK2(1))
+       call dsyev('V','L',M,X,M,RMM(M13),WORK2,-1,info)
+       LWORK2=int(WORK2(1)); deallocate(WORK2); allocate(WORK2(LWORK2))
+       call dsyev('V','L',M,X,M,RMM(M13),WORK2,LWORK2,info)
+#endif
+c-----------------------------------------------------------
+c
+c LINEAR DEPENDENCY ELIMINATION
+        allocate (Y(M,M),Ytrans(M,M),Xtrans(M,M))
+c
+        do i=1,MM
+          RMM(M5+i-1)=rmm5(i)
+          ! WHAT IS THE POINT OF DOING THIS?
+c          write(56,*) RMM(M15+1)
+        enddo
 
-         if (dovv.eqv..true.) then
-          fockbias=0.0d0
-
-          weight=0.195d0
-          call vector_selection(1,orb_group,orb_selection)
-          call fterm_biaspot(M,sqsm,orb_selection,weight,fockbias)
-
-          weight=-weight
-          call vector_selection(2,orb_group,orb_selection)
-          call fterm_biaspot(M,sqsm,orb_selection,weight,fockbias)
-         endif
-
-         allocate (Y(M,M),Ytrans(M,M),Xtrans(M,M))
-         do iii=1,M
-         do jjj=1,M
-           X(iii,jjj)=Xmat(iii,jjj)
+        do j=1,M
+          if (RMM(M13+j-1).lt.1.0D-06) then
+            write(*,*) 'LINEAR DEPENDENCY DETECTED'
+            do i=1,M
+              X(i,j)=0.0D0
+              Y(i,j)=0.0D0
+            enddo
+          else
+            do i=1,M
+              X(i,j)=X(i,j)/sqrt(RMM(M13+j-1))
+              Y(i,j)=X(i,j)*(RMM(M13+j-1))
+            enddo
+          endif
          enddo
-         enddo
-         Y=Ymat
-         Xtrans=Xtrp
-         Ytrans=Ytrp
-         do kk=1,M
-           RMM(M13+kk-1)=Dvec(kk)
+
+         do i=1,M
+            do j=1,M
+              Ytrans(i,j)=Y(j,i)
+              Xtrans(i,j)=X(j,i)
+            enddo
          enddo
 
       ENDIF
+
       call g2g_timer_stop('cholesky')
 !! CUBLAS ---------------------------------------------------------------------!
 #ifdef CUBLAS
@@ -479,16 +398,22 @@ c Calculate F' in RMM(M5)
         call g2g_timer_sum_start('initial guess')
         primera=.false.
         do i=1,M
-          do j=1,M
+! X is upper triangular
+          do j=1,i-1
             X(i,M+j)=0.D0
             do k=1,j
               X(i,M+j)=X(i,M+j)+X(k,i)*RMM(M11+j+(M2-k)*(k-1)/2-1)
             enddo
-            do k=j+1,M
+            do k=j+1,i
               X(i,M+j)=X(i,M+j)+X(k,i)*RMM(M11+k+(M2-j)*(j-1)/2-1)
             enddo
           enddo
-
+          do j=i,M
+            X(i,M+j)=0.D0
+            do k=1,i
+              X(i,M+j)=X(i,M+j)+X(k,i)*RMM(M11+j+(M2-k)*(k-1)/2-1)
+            enddo
+          enddo
         enddo
 
         kk=0
@@ -538,14 +463,13 @@ c Recover C from (X^-1)*C
         do i=1,M
           do j=1,M
             X(i,M2+j)=0.D0
-            do k=1,M
+! X is upper triangular
+            do k=i,M
               X(i,M2+j)=X(i,M2+j)+X(i,k)*X(k,M+j)
             enddo
           enddo
         enddo
       call g2g_timer_stop('initial guess')
-
-
 c
 c Density Matrix
 c
@@ -581,17 +505,14 @@ c
         call g2g_timer_sum_stop('initial guess')
       endif
 
-
-
-
 c End of Starting guess (No MO , AO known)-------------------------------
 c
-      if ((timedep.eq.1).and.(tdrestart)) then
-        call g2g_timer_sum_start('TD')
-        call TD()
-        call g2g_timer_sum_stop('TD')
-        return
-      endif
+!      if ((timedep.eq.1).and.(tdrestart)) then
+!        call g2g_timer_sum_start('TD')
+!        call TD()
+!        call g2g_timer_sum_stop('TD')
+!        return
+!      endif
 c 
 c Precalculate two-index (density basis) "G" matrix used in density fitting
 c here (S_ij in Dunlap, et al JCP 71(8) 1979) into RMM(M7)
@@ -607,7 +528,6 @@ c Precalculate three-index (two in MO basis, one in density basis) matrix
 c used in density fitting / Coulomb F element calculation here
 c (t_i in Dunlap)
 c
-
       call aint_query_gpu_level(igpu)
       if (igpu.gt.2) then
         call aint_coulomb_init()
@@ -627,14 +547,12 @@ c         call int3mems()
          call g2g_timer_sum_stop('Coulomb precalc')
       endif
 ****
-c----------juanderboy-------------------------------------
       if ((timedep.eq.1).and.(tdrestart)) then
         call g2g_timer_sum_start('TD')
         call TD()
         call g2g_timer_sum_stop('TD')
         return
       endif
-
 c---------------------------------------------------------------------
 c Now, damping is performed on the density matrix
 c The first 4 iterations ( it may be changed, if necessary)
@@ -652,12 +570,7 @@ c
         stop
       endif
 c
-
-      if (hybrid_converg) DIIS=.true.
-c cambio para convergencia damping-diis
-
-      if ((DIIS ) .and.alloqueo) then
-! agregado para cambio de damping a diis, Nick
+      if (DIIS.and.alloqueo) then
         alloqueo=.false.
 c       write(*,*) 'eme=', M
        allocate(rho1(M,M),rho(M,M),fockm(MM,ndiis),
@@ -665,30 +578,21 @@ c       write(*,*) 'eme=', M
      >  ,suma(MM))
       endif
       call g2g_timer_sum_stop('Initialize SCF')
-
-c-------------------------------------------------------------------
-c Test for NaN
-        call SEEK_NaN(RMM,1,MM,"RHO 1")
-        call SEEK_NaN(RMM,M5-1,M5-1+MM,"FOCK 1")
-c-------------------------------------------------------------------
-
-
+      do i=1,MM
+         if(RMM(i).ne.RMM(i)) stop 'NAN en RHO'
+         if(RMM(M5+i).ne.RMM(M5+i)) stop 'NAN en fock'
+      enddo
 c-------------------------------------------------------------------
 c-------------------------------------------------------------------
 c      write(*,*) 'empiezo el loop',NMAX
 c-------------------------------------------------------------------
 c-------------------------------------------------------------------
-      do 999 while ((good.ge.told.or.Egood.ge.Etold).and.niter.le.NMAX)
-
-	if (verbose) call WRITE_CONV_STATUS(GOOD,TOLD,EGOOD,ETOLD)
-c Escribe los criterios de convergencia y el valor del paso de dinamica
-
+      do 999 while (good.ge.told.and.niter.le.NMAX)
 
         call g2g_timer_start('Total iter')
         call g2g_timer_sum_start('Iteration')
         call g2g_timer_sum_start('Fock integrals')
         niter=niter+1
-
         if(niter.le.ndiis) then
           ndiist=niter
         else
@@ -699,25 +603,8 @@ c      if (MEMO) then
 c
 c Fit density basis to current MO coeff and calculate Coulomb F elements
 c
-
-
-c-------------------------------------------------------------------
-c Test for NaN
-        call SEEK_NaN(RMM,1,MM,"RHO 20")
-        call SEEK_NaN(RMM,M5-1,M5-1+MM,"FOCK 20")
-c-------------------------------------------------------------------
-
-
             call g2g_timer_sum_start('Coulomb fit + Fock')
             call int3lu(E2)
-
-c-------------------------------------------------------------------
-c Test for NaN
-        call SEEK_NaN(RMM,1,MM,"RHO 2")
-        call SEEK_NaN(RMM,M5-1,M5-1+MM,"FOCK 2")
-c-------------------------------------------------------------------
-
-
             call g2g_timer_sum_pause('Coulomb fit + Fock')
 c
 c XC integration / Fock elements
@@ -726,20 +613,11 @@ c
             call g2g_solve_groups(0,Ex,0)
             call g2g_timer_sum_pause('Exchange-correlation Fock')
 
-c-------------------------------------------------------------------
-c Test for NaN
-        call SEEK_NaN(RMM,1,MM,"RHO 30")
-        call SEEK_NaN(RMM,M5-1,M5-1+MM,"FOCK 30")
-c-------------------------------------------------------------------
-
-
-
 c-------------------------------------------------------
         E1=0.0D0
 c
 c REACTION FIELD CASE --------------------------------------------
 c
-!TRANSPORT!
         IF(FIELD.and.generate_rho0) THEN
             call dip(ux,uy,uz)
             write(*,*) 'ux,uy,uz =', ux,uy,uz
@@ -761,14 +639,8 @@ c E1 includes solvent 1 electron contributions
             do 303 k=1,MM
  303             E1=E1+RMM(k)*RMM(M11+k-1)
         ENDIF
-!-----fin juanderboy-------------------------------------!
         call g2g_timer_start('actualiza rmm')
 c----------------------------------------------------------------
-c E1 includes solvent 1 electron contributions
-c        do k=1,MM
-c         E1=E1+RMM(k)*RMM(M11+k-1)
-c        enddo
-c        write(*,*) 'E1 nano y juan',E1
         call g2g_timer_sum_pause('Fock integrals')
         call g2g_timer_sum_start('SCF acceleration')
 c
@@ -776,7 +648,7 @@ c
 c now, we know S matrix, and F matrix, and E for a given P
 c 1) diagonalize S, get X=U s^(-1/2)
 c 2) get U F Ut
-c 3) diagonalize F
+!c 3) diagonalize F
 c 4) get vec ( coeff) ---->  P new
 c 5) iterate
 c call diagonalization routine for S , get after U s^(-1/2)
@@ -796,7 +668,6 @@ c If DIIS is turned on, update fockm with the current transformed F' (into ON
 c basis) and update FP_PFm with the current transformed [F',P']
 c-----------------------------------------------------------------------------------------
         if (DIIS) then
-! agregado para cambio de damping a diis, Nick
           call g2g_timer_sum_start('DIIS')
           call g2g_timer_sum_start('DIIS prep')
 c-----------------------------------------------------------------------------------------
@@ -811,11 +682,6 @@ c-------------------------------------------------------------------------------
               fock(j,k)=RMM(M5+k+(M2-j)*(j-1)/2-1)
             enddo
           enddo
-
-! FFR: Van Voorhis Term for DIIS
-!--------------------------------------------------------------------!
-         if (dovv.eqv..true.) fock=fock+fockbias
-
 c-----------------------------------------------------------------------------------------
 c Expand density matrix into full square form (before, density matrix was set up for triangular sums
 c (sum j>=i) so off-diagonal elements need to be divided by 2 to get square-form numbers)
@@ -838,7 +704,6 @@ c-------------------------------------------------------------------------------
 #else
           call calc_fock_commuts(fock,rho,X,Y,scratch,scratch1,M)
 #endif
-
           call g2g_timer_stop('commutators + basechange')
           ! update fockm with F'
           do j=ndiis-(ndiist-1),ndiis-1
@@ -880,48 +745,25 @@ c-------------------------------------------------------------------------------
           call g2g_timer_sum_pause('DIIS prep')
           call g2g_timer_sum_pause('DIIS')
         endif
-
-
 c
 c-------------Decidiendo cual critero de convergencia usar-----------
 c-----------------------------------------------------------------------------------------
 c iF DIIS=T
 c Do simple damping 2nd iteration; DIIS afterwards
 c-----------------------------------------------------------------------------------------
-c IF DIIS=F and hybrid_converg T
-c Do Do simple damping until GOOD<=GOOD_CUT. DIIS afterwards
-c-----------------------------------------------------------------------------------------
-c IF DIIS=F and hybrid_converg F
+c IF DIIS=F
 c Always do damping (after first iteration)
 c-----------------------------------------------------------------------------------------
-
-	if ( .not. hybrid_converg ) then
-	        if (niter.gt.2.and.(DIIS)) then
-        	  hagodiis=.true.
-		end if
-	else
-c cambia damping a diis, Nick
-		if (good .lt. good_cut ) then
-		  if ( .not. hagodiis ) then
-		    write(6,*)
-		    write(6,8503)
-		    write(6,8504) niter
-		    write(6,8505)
-		    write(6,*)
-		  end if 
-		  hagodiis=.true.
-		end if
-	end if
-
+        if (niter.gt.2.and.(DIIS)) then
+          hagodiis=.true.
+        endif
 
 c-----------------------------------------------------------------------------------------
 c If we are not doing diis this iteration, apply damping to F, save this
 c F in RMM(M3) for next iteration's damping and put F' = X^T * F * X in RMM(M5)
-c----------------------------------------------------------------------------------------
+c-----------------------------------------------------------------------------------------
         if(.not.hagodiis) then 
           call g2g_timer_start('Fock damping')
-
-
           if(niter.ge.2) then
             do k=1,MM
               kk=M5+k-1
@@ -929,6 +771,7 @@ c-------------------------------------------------------------------------------
               RMM(kk)=(RMM(kk)+DAMP*RMM(kk2))/(1.D0+DAMP)
             enddo
           endif
+
 c the newly constructed damped matrix is stored, for next iteration
 c in RMM(M3)
 c
@@ -936,7 +779,7 @@ c
             kk=M5+k-1
             kk2=M3+k-1
             RMM(kk2)=RMM(kk)
-          enddo
+         enddo
 c
 ! xnano=X^T
 !          do i=1,M
@@ -945,7 +788,7 @@ c
 !              xnano(i,j)=X(j,i)
 !            enddo
 !          enddo
-
+!
 ! RMM(M5) gets F' = X^T * F * X
 !          do j=1,M
 !            do i=1,M
@@ -957,7 +800,7 @@ c
 !                X(i,M+j)=X(i,M+j)+Xnano(i,k)*RMM(M5+j+(M2-k)*(k-1)/2-1)
 !              enddo
 !            enddo
-!c
+c
 !            do k=j+1,M
 !              ! xnano is lower triangular
 !              do i=k,M
@@ -966,14 +809,14 @@ c
 !            enddo
 !
 !          enddo
-!c
+c
 !          kk=0
 !          do i=1,M
 !            do k=1,M
 !              xnano(k,i)=X(i,M+k)
 !            enddo
 !          enddo
-!!
+!
 !          do j=1,M
 !            do i=j,M
 !              kk=kk+1
@@ -994,12 +837,6 @@ c
                  fock(k,j)=RMM(M5+k+(M2-j)*(j-1)/2-1)
               enddo
             enddo
-
-! FFR: Van Voorhis Term for not DIIS
-!--------------------------------------------------------------------!
-         if (dovv.eqv..true.) fock=fock+fockbias
-
-
 #ifdef CUBLAS
             call cumxtf(fock,devPtrX,fock,M)
             call cumfx(fock,DevPtrX,fock,M)
@@ -1016,8 +853,6 @@ c
           enddo
           call g2g_timer_stop('Fock damping')
         endif
-
-
 c
 c now F contains transformed F
 c diagonalization now
@@ -1107,13 +942,8 @@ c-------Escribimos en xnano y znano dos conmutadores de distintas iteraciones---
           enddo
           EMAT(ndiist+1, ndiist+1)= 0.0
 
-
           allocate(EMAT2(ndiist+1,ndiist+1))
-
-
           EMAT2=EMAT
-
-
 c        ematalloct=.true.
 c********************************************************************
 c   THE MATRIX EMAT SHOULD HAVE FORM
@@ -1150,7 +980,6 @@ c-----Resuelve la ecuación A*X = B. (EMAT*ci=bcoef). La solución la escribe en
       CALL DGELS( 'No transpose',ndiist+1, ndiist+1, 1, EMAT,
      > ndiist+1, bcoef, ndiist+1, WORK, LWORK, INFO )
 
-
 c--------Construccion de la "nueva" matriz de fock como cl de las anteriores--------------
 c--------Eventualmente se puede probar con la matriz densidad-----------------------------
             suma=0
@@ -1169,7 +998,6 @@ c--------Eventualmente se puede probar con la matriz densidad-------------------
         call g2g_timer_sum_pause('DIIS')
       endif
 
-
 c
 c F' diagonalization now
 c X(1,M) will contain (X^-1)*C
@@ -1182,18 +1010,11 @@ c ESSL OPTION ---------------------------------------------------
 #ifdef essl
        call DSPEV(1,RMM(M5),RMM(M13),X(1,M+1),M,M,RMM(M15),M2)
 #endif
-
-       if(.not.allocated(fock)) allocate (fock(M,M))
-       fock=0
-       do j=1,M
-       do k=1,j
-         i=j+(M2-k)*(k-1)/2
-         fock(j,k)=RMM(M5+i-1)
-       enddo
-       enddo
-
 c
-
+c LAPACK OPTION -----------------------------------------
+#ifdef pack
+c#ifdef magma
+c-------nano tratando de usar magma
       if(.not.allocated(fock)) allocate (fock(M,M))
       fock=0
       do j=1,M
@@ -1202,61 +1023,36 @@ c
          fock(j,k)=RMM(M5+i-1)
         enddo
       enddo
-!
-!
-! FFR: Fock Diagonaliation is now external
-!--------------------------------------------------------------------!
-       call g2g_timer_start('scf - fock diagonalization')
-
-       if ( allocated(eigen_vecs) ) deallocate(eigen_vecs)
-       allocate( eigen_vecs(M,M) )
-       if ( allocated(eigen_vals) ) deallocate(eigen_vals)
-       allocate( eigen_vals(M) )
-
-       call matrix_diagon( fock, eigen_vecs, eigen_vals )
-       fock=eigen_vecs
-       do kk=1,M
-         RMM(M13+kk-1) = eigen_vals(kk)
-       end do
-
-
-       call g2g_timer_stop('scf - fock diagonalization')
-!
-!
-! FFR: Old version - kept until functionality is assured
-!--------------------------------------------------------------------!
-      if (.false.) then
+c---------------------
        LWORK=-1
-
 #ifdef magma
-       call magmaf_dsyevd('V','L',M,fock,M,RMM(M13),WORK,LWORK
+      call magmaf_dsyevd('V','L',M,fock,M,RMM(M13),WORK,LWORK
      > ,IWORK,LWORK,info)
 #else
-       call dsyevd('V','L',M,fock,M,RMM(M13),WORK,LWORK
+      call dsyevd('V','L',M,fock,M,RMM(M13),WORK,LWORK
      > ,IWORK,LWORK,info)
 #endif
 
        LWORK=work(1)
-       LIWORK=IWORK(1)
-       if(allocated(WORK2)) deallocate (WORK2)
-       if(allocated(IWORK2)) deallocate (IWORK2)
+      LIWORK=IWORK(1)
+
+      if(allocated(WORK2)) deallocate (WORK2,IWORK2)
+
        allocate (WORK2(LWORK),IWORK2(LIWORK))
- 
+
+
 #ifdef magma
-       call magmaf_dsyevd('V','L',M,fock,M,RMM(M13),WORK2,LWORK
+      call magmaf_dsyevd('V','L',M,fock,M,RMM(M13),WORK2,LWORK
      > ,IWORK2,LIWORK,info)
 #else
-       call dsyevd('V','L',M,fock,M,RMM(M13),WORK2,LWORK
+      call dsyevd('V','L',M,fock,M,RMM(M13),WORK2,LWORK
      > ,IWORK2,LIWORK,info)
 #endif
-      end if
-!
-!
-!
-!--------------------------------------------------------------------!
-
-
-
+c#else
+c       call dspev('V','L',M,RMM(M5),RMM(M13),X(1,M+1),
+c     > M,RMM(M15),info)
+c#endif
+#endif
        call g2g_timer_stop('dspev')
        call g2g_timer_sum_pause('diagonalization')
 c       do ik=1,M
@@ -1285,31 +1081,20 @@ c-----------------------------------------------------------
        enddo
 #else
 c new coefficients
-        do i=1,M
-           do j=1,M
-              xnano(i,j)=x(i,j)
-           enddo
-        enddo
-        xnano=matmul(xnano,fock)
-        do i=1,M
-          do j=1,M
-             X(i,M2+j)=xnano(i,j)
-          enddo
+       do i=1,M
+         do k=1,M
+           xnano(i,k)=X(k,i)
+         enddo
        enddo
-!       do i=1,M
-!         do k=1,M
-!           xnano(i,k)=X(k,i)
-!         enddo
-!       enddo
-!       do i=1,M
-!        do j=1,M
-!            X(i,M2+j)=0.D0
-!            ! xnano is lower triangular
-!            do k=i,M
-!              X(i,M2+j)=X(i,M2+j)+xnano(k,i)*fock(k,j)
-!            enddo
-!          enddo
-!      enddo
+       do i=1,M
+        do j=1,M
+            X(i,M2+j)=0.D0
+            ! xnano is lower triangular
+            do k=i,M
+              X(i,M2+j)=X(i,M2+j)+xnano(k,i)*fock(k,j)
+            enddo
+          enddo
+      enddo
 #endif
       call g2g_timer_stop('coeff')
       call g2g_timer_start('otras cosas')
@@ -1330,10 +1115,7 @@ c
 c
 c Construction of new density matrix and comparison with old one
       kk=0
-
-c	if (good .le. 10d0) Wri=.true.
       good=0.
-
       call g2g_timer_start('dens_GPU')
       call density(M,NCO,X,xnano)
       do j=1,M
@@ -1341,13 +1123,10 @@ c	if (good .le. 10d0) Wri=.true.
                del=xnano(j,k)-(RMM(k+(M2-j)*(j-1)/2))
                del=del*sq2
                good=good+del**2
-c		if (Wri) write(95,*) (k+(M2-j)*(j-1)/2),del**2
                RMM(k+(M2-j)*(j-1)/2)=xnano(j,k)
          enddo
       enddo
-c		if (Wri) write(95,*) 
       good=sqrt(good)/float(M)
-
       call g2g_timer_stop('dens_GPU')
 
        if (SHFT) then
@@ -1391,34 +1170,15 @@ c
         call g2g_timer_stop('otras cosas')
         call g2g_timer_sum_pause('new density')
 
-c        if(verbose) write(6,*) 'iter',niter,'QM Energy=',E+Ex
-c vieja escritura
-
-
-	if(verbose) call WRITE_E_STEP(niter, E+Ex)
-c escribe energia en cada paso
-
-
-	Egood=abs(E+Ex-Evieja)
-	Evieja=E+Ex
+        if(verbose) write(6,*) 'iter',niter,'QM Energy=',E+Ex
 c
         call g2g_timer_stop('Total iter')
         call g2g_timer_sum_pause('Iteration')
-
-
-c-------------------------------------------------------------------
-c Test for NaN in Fock and Rho
-        call SEEK_NaN(RMM,1,MM,"RHO end 1 cicle of SCF")
-        call SEEK_NaN(RMM,M5-1,M5-1+MM,"FOCK end 1 cicle of SCF")
-c-------------------------------------------------------------------
-
-
  999  continue
 c-------------------------------------------------------------------
 c
 c-------------------------------------------------------------------
       call g2g_timer_sum_start('Finalize SCF')
-
 
       if (niter.ge.NMAX) then
         write(6,*) 'NO CONVERGENCE AT ',NMAX,' ITERATIONS'
@@ -1433,14 +1193,14 @@ c-------------------------------------------------------------------
 c      old3=old2
 
 c      old2=old1
-c        write(*,*) 'good final',good
+        write(*,*) 'good',good
 
 c      do i=1,MM
 c        old1(i)=RMM(i)
 c      enddo
 
       if(noconverge.gt.4) then
-        write(6,*)  'stop for not convergion 4 times'
+        write(6,*)  'stop fon not convergion 4 times'
         stop
       endif
 
@@ -1460,8 +1220,6 @@ c      call mmsol(natom,Nsol,natsol,Iz,pc,r,Em,Rm,Es)
       Es=Es+E1s+Ens
 c     endif
 c--------------------------------------------------------------
-
-
 c  ????
       if (MOD(npas,energy_freq).eq.0) then
       if (GRAD) then
@@ -1494,27 +1252,14 @@ c       write(*,*) 'g2g-Exc',Exc
         ! En - nuclear-nuclear repulsion
         ! Ens - MM point charge-nuclear interaction
         ! Exc - exchange-correlation
-	! Eecp - Efective core potential
         ! -------------------------------------------------
         E=E1+E2+En+Ens+Exc
         if (npas.eq.1) npasw = 0
         if (npas.gt.npasw) then
-
-
-!%%%%%%%%%%%%%%   Write Energie Contributions   %%%%%%%%%%%%%%
-        if (ecpmode) then
-               Eecp=0.d0
-               do k=1,MM
-                 Eecp=Eecp+RMM(k)*(VAAA(k)+VAAB(k)+VBAC(k))
-               enddo
-	end if
- 
-c        write(*,*) 'E1 nano y juan2',E1
-	call WriteEnergies(E1,E2,En,Eecp,Exc,Ex,ecpmode)
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
+          write(6,*)
+          write(6,600)
+          write(6,610)
+          write(6,620) E1,E2-Ex,En
 c         if (sol) then
 c          write(6,615)
 c          write(6,625) Es
@@ -1528,8 +1273,6 @@ c--------------------------------------------------------------
       endif
 c calculation of energy weighted density matrix
 c
-
-
       call g2g_timer_sum_start('energy-weighted density')
       kk=0
       do j=1,M
@@ -1548,60 +1291,48 @@ c
           enddo
         enddo
       enddo
-
       call g2g_timer_sum_stop('energy-weighted density')
 
       if (MOD(npas,energy_freq).eq.0) then
 c
 c      if (nopt.eq.1) then
 c
-
-!----------------------------------------------------------!
-! PROPERTIES CALCULATION - DIPOLE MOMENT (DEBYES)
-       if (idip.eq.1) then
-         call g2g_timer_sum_start('dipole')
-         call dip(ux,uy,uz)
-         u=sqrt(ux**2+uy**2+uz**2)
-
-!         write(*,*)
-!         write(*,*) 'DIPOLE MOMENT, X Y Z COMPONENTS AND NORM (DEBYES)'
-         write(69,8704) ux,uy,uz,u
-!         write(*,*)
-         dipxyz(1)=ux
-         dipxyz(2)=uy
-         dipxyz(3)=uz
-         call g2g_timer_sum_stop('dipole')
-       endif
-!----------------------------------------------------------!
+c PROPERTIES CALCULATION
+c calculates dipole moment
+c
+      if (idip.eq.1) then
+       call g2g_timer_sum_start('dipole')
+        call dip(ux,uy,uz)
+        u=sqrt(ux**2+uy**2+uz**2)
+        dipxyz(1)=ux
+        dipxyz(2)=uy
+        dipxyz(3)=uz
+c
+c      write(*,*)
+c      write(*,*) 'DIPOLE MOMENT, X Y Z COMPONENTS AND NORM (DEBYES)'
+c       write(69,900) ux,uy,uz,u
+c      write(*,*)
+c u in Debyes
+       call g2g_timer_sum_stop('dipole')
+      endif
+c
 
 
 
        call g2g_timer_sum_start('Mulliken')
 ! MULLIKEN POPULATION ANALYSIS (FFR - Simplified)
 !--------------------------------------------------------------------!
-
        call int1(En)
        call spunpack('L',M,RMM(M5),Smat)
        call spunpack('L',M,RMM(M1),RealRho)
        call fixrho(M,RealRho)
        call mulliken_calc(natom,M,RealRho,Smat,Nuc,Iz,q)
-
-       if (ecpmode) then
-!Modification for Effective Core Potential, Nick
-          call mulliken_write(85,natom,IzECP,q)
-       else
-          call mulliken_write(85,natom,Iz,q)
-       end if
+       call mulliken_write(85,natom,Iz,q)
 
 ! NOTE: If 'mulliken_calc' is renamed as 'mulliken', the code will
 ! malfunction. I DON'T KNOW WHY.
 !--------------------------------------------------------------------!
        call g2g_timer_sum_stop('Mulliken')
-!       do kk=1,natom
-!         q(kk)=real(Iz(kk))
-!       enddo
-!       call lowdinpop(M,natom,RealRho,sqsm,Nuc,q)
-!       call mulliken_write(85,natom,Iz,q)
        endif
 
 c
@@ -1630,13 +1361,9 @@ c outputs final  MO ---------------------
         enddo
       enddo
 c
-
       do l=1,M
-c graba un restart de los coeficientes
         write(88,400) (X(l,M+n),n=1,NCO)
       enddo
-
-
       call g2g_timer_sum_stop('restart write')
       endif
 c-------------------------------------------------
@@ -1668,13 +1395,7 @@ c      endif
         deallocate (Y,Ytrans,Xtrans,fock,fockm,rho,FP_PFm,
      >  znano,EMAT, bcoef, suma,rho1, scratch, scratch1)
       endif
-
-!      deallocate (xnano,rmm5,rmm15)
-      deallocate (xnano)
-      deallocate (rmm5)
-!	write(19,*) rmm15
-      deallocate (rmm15)
-
+      deallocate (xnano,rmm5,rmm15)
 
       if (MEMO) then
         deallocate (kkind,kkinds)
@@ -1682,14 +1403,13 @@ c      endif
       endif
       if(allocated(WORK2)) deallocate (WORK2)
 
-
 c       E=E*627.509391D0
+
       if(timedep.eq.1) then
         call g2g_timer_sum_start('TD')
         call TD()
         call g2g_timer_sum_stop('TD')
       endif
-
 #ifdef CUBLAS
       call CUBLAS_FREE(devPtrX)
       call CUBLAS_FREE(devPtrY)
@@ -1706,11 +1426,8 @@ c       E=E*627.509391D0
  300  format(I3,E14.6,2x,F14.7)
  600  format('  ENERGY CONTRIBUTIONS IN A.U.')
  610  format(2x,'ONE ELECTRON',9x,'COULOMB',11x,'NUCLEAR')
- 611  format(4x,'ONE ELECTRON',9x,'COULOMB',9x,'NUCLEAR', 9x,
-     & 'E. CORE POT.')
  615  format(2x,'SOLVENT')
  620  format(F14.7,4x,F14.7,4x,F14.7)
- 621  format(F14.7,6x,F14.7,2x,F14.7,4x,F14.7)
  625  format(F14.7)
  760  format(I3,9x,I3,6x,F10.4)
  770  format('ATOM #',4x,'ATOM TYPE',4x,'POPULATION')
@@ -1729,23 +1446,8 @@ c       E=E*627.509391D0
   88  format(5(2x,f8.5))
   45  format(E15.6E4)
   91  format(F14.7,4x,F14.7)
-
-
-!%%%%%%%%%%%%%%%%%%%%%%%%% Nuevos Formatos, Nick %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- 8503 FORMAT(4x,"╔════════════════",
-     >"══╦══════╦═══════╗")
- 8504 FORMAT(4x,"║ Changing to DIIS ║ step ║",2x,i4,1x,"║")
- 8505 FORMAT(4x,"╚════════════════",
-     >"══╩══════╩═══════╝")
-
- 8704 FORMAT(4x,4("║"F13.9,2x),"║")
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+c
       !call g2g_timer_sum_stop('SCF');
-
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-	call g2g_timer_stop('SCF_full')
-
       return
       end
 C  -------------------------
