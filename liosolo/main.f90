@@ -25,7 +25,10 @@
 #ifdef CUBLAS
       use cublasmath
 #endif
-      implicit none 
+!juanderboy, testeando...!
+!      implicit none 
+      implicit real*8 (a-h,o-z)
+!
       character(len=20)   :: argument, inpfile, inpbasis, inpcoords
       integer             :: charge, ifind, ierr, i, k, narg, ios
       real*8              :: dipxyz(3), escf

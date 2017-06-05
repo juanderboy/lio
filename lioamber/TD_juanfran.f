@@ -26,7 +26,7 @@ c  are stored in files x.dip, y.dip, z.dip.
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%!
 c       USE latom
        USE garcha_mod
-       use ECP_mod, only : ecpmode, term1e, VAAA, VAAB, VBAC, IzECP
+       use ECP_mod, only : ecpmode, term1e, VAAA, VAAB, VBAC
        use mathsubs
 #ifdef CUBLAS
        use cublasmath
@@ -1271,11 +1271,7 @@ c-------------------------MULLIKEN CHARGES--------------------------------------
                          enddo
                          if(groupcharge) qgr=0.0d0
                          do n=1,natom
-                            if (ecpmode) then
-                            write(1111111,*) n,IzECP(n),q(n)
-                            else
                             write(1111111,*) n,Iz(n),q(n)
-                            endif
                             if(groupcharge) then
                                qgr(group(n))=qgr(group(n))+q(n)
                             endif
