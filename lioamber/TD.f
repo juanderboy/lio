@@ -87,7 +87,7 @@ c       USE latom
        COMPLEX*8,ALLOCATABLE,DIMENSION(:,:) :: rho_et
        LOGICAL :: ET
        LOGICAL :: GATEFIELD
-       REAL*8 :: scratchgamma
+       REAL*8 :: scratchgamma, tmax
        REAL*8 :: fxx, fyy, fzz
 !       LOGICAL :: TRANSPORT_CALC
 #ifdef TD_SIMPLE
@@ -679,7 +679,10 @@ c         call int3mems()
      >      .and. (.not.tdrestart)) then
                  t=(istep-1)*tdstep*0.1
               elseif(.not.tdrestart) then
-                 t=20*tdstep
+!juanderboy. fixing some syntaxis in order to make it more general
+!                 t=20*tdstep
+                 t=lpfrg_steps*0.1*tdstep
+! fin juanderboy!
                  t=t+(istep-200)*tdstep
               else
                  t=tdstep*(istep-1)
@@ -921,8 +924,13 @@ c--------------------------------------c
                endif
                if(istep.ge.3) then
 ! compute the driving term for transport properties
-             scratchgamma=GammaVerlet*exp(-0.0001*(dble(istep-1000))**2)    
-             call ELECTROSTAT(rho1,mapmat,overlap,rhofirst,gammascratch)
+! juanderboy. inyecting gamma in a temporal window instead of a certain number of isteps!
+            tmax=100
+            scratchgamma=GammaVerlet*exp(-0.0001*
+     >      (dble(istep-(tmax/tdstep+lpfrg_steps)))**2)
+!             scratchgamma=GammaVerlet*exp(-0.0001*(dble(istep-1000))**2)    
+! fin juanderboy!
+             call ELECTROSTAT(rho1,mapmat,overlap,rhofirst,scratchgamma)
                  re_traza=0.0D0
 ! Mulliken population analysis for the driving term
                  if((ipop.eq.1).and.
@@ -1033,8 +1041,12 @@ c Density update (rhold-->rho, rho-->rhonew). comentado por juanderboy.
                   open(unit=55555,file='DriveMul')
 !                  open(unit=51515,file='DriveMulAtom')
               endif
-              if(istep.le.1000) then
-            scratchgamma=GammaMagnus*exp(-0.0001*(dble(istep-1000))**2)
+!juanderboy - inducing gamma in a temporal window insted of a certain number of steps.
+              if(istep.le.(lpfrg_steps+tmax/tdstep)) then
+            tmax=100
+            scratchgamma=GammaMagnus*exp(-0.0001*
+     >      (dble(istep-(tmax/tdstep+lpfrg_steps)))**2)
+!juanderboy end!
               else
             scratchgamma=GammaMagnus
               endif

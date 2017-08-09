@@ -1419,6 +1419,7 @@ c
 c-------------------------------------------------------------------
       call g2g_timer_sum_start('Finalize SCF')
 
+       if (verbose) call WRITE_CONV_STATUS(GOOD,TOLD,EGOOD,ETOLD)
 
       if (niter.ge.NMAX) then
         write(6,*) 'NO CONVERGENCE AT ',NMAX,' ITERATIONS'
