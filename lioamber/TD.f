@@ -87,7 +87,7 @@ c       USE latom
        COMPLEX*8,ALLOCATABLE,DIMENSION(:,:) :: rho_et
        LOGICAL :: ET
        LOGICAL :: GATEFIELD
-       REAL*8 :: scratchgamma, tmax
+       REAL*8 :: scratchgamma, istep_max, ta, width, tmax
        REAL*8 :: fxx, fyy, fzz
 !       LOGICAL :: TRANSPORT_CALC
 #ifdef TD_SIMPLE
@@ -925,6 +925,12 @@ c--------------------------------------c
                if(istep.ge.3) then
 ! compute the driving term for transport properties
 ! juanderboy. inyecting gamma in a temporal window instead of a certain number of isteps!
+! all this beauty is fully explained later in Magnus.
+            ta=10
+!            tmax=2.3*(ta/tdstep)
+!            width=-(tdstep/ta)**2
+!            scratchgamma=GammaVerlet*exp(width*
+!     >      (dble(istep-(tmax/tdstep+lpfrg_steps)))**2)
             tmax=100
             scratchgamma=GammaVerlet*exp(-0.0001*
      >      (dble(istep-(tmax/tdstep+lpfrg_steps)))**2)
@@ -1042,10 +1048,18 @@ c Density update (rhold-->rho, rho-->rhonew). comentado por juanderboy.
 !                  open(unit=51515,file='DriveMulAtom')
               endif
 !juanderboy - inducing gamma in a temporal window insted of a certain number of steps.
+! for a generic gaussian function with the formula exp(-(x-xo)**2/a), the  full width 
+! at half maximum is 2.3*sqrt(a). I'm using here a gaussian with a=(ta/tdstep) and
+! reaching its maximum after an entire width (i am using a half of the gaussian here
+! so we should be good). 
               if(istep.le.(lpfrg_steps+tmax/tdstep)) then
-            tmax=100
-            scratchgamma=GammaMagnus*exp(-0.0001*
-     >      (dble(istep-(tmax/tdstep+lpfrg_steps)))**2)
+            ta=10
+            istep_max=2.3*(ta/tdstep)
+!            tmax=100
+            width=-(tdstep/ta)**2
+            scratchgamma=GammaMagnus*exp(width*
+     >      (dble(istep-(istep_max+lpfrg_steps)))**2)
+
 !juanderboy end!
               else
             scratchgamma=GammaMagnus
